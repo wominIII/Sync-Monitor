@@ -17,9 +17,9 @@
 ## 📦 如何安装
 
 1.  复制本仓库的链接：
-    ```
-    [你的GitHub仓库链接会显示在这里，或者你手动贴一下]
-    ```
+```
+https://github.com/wominIII/Sync-Monitor
+```
 2.  打开 SillyTavern 酒馆。
 3.  点击顶部的 **扩展 (Extensions)** 图标。
 4.  点击 **安装扩展 (Install Extension)**。
