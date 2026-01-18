@@ -1,0 +1,11 @@
+{
+    "name": "Sync Monitor",
+    "display_name": "同步监控器",
+    "id": "sync_monitor",
+    "version": "0.0.1",
+    "author": "zmer",
+    "description": "114514",
+    "js": "index.js",
+    "css": "style.css",
+    "type": "extension"
+}
