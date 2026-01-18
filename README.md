@@ -1,4 +1,3 @@
-# Sync-Monitor
 # Sync Monitor 🔄 for SillyTavern
 
 **Sync Monitor** 是一个专为 SillyTavern (酒馆) 设计的轻量级扩展插件。它能实时监控浏览器与服务器之间的数据同步状态，防止因网络延迟或服务器写入未完成而导致的数据回档（配置丢失）。
