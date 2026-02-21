@@ -36,6 +36,45 @@
         if (window.saveSettingsDebounced) window.saveSettingsDebounced();
     }
 
+    // 新增：全局边界检查修复函数（用于处理窗口缩放、加载异常、模式切换导致的越界）
+    function checkAndFixBounds() {
+        const div = document.getElementById('sync-monitor-indicator');
+        if (!div) return;
+        
+        const rect = div.getBoundingClientRect();
+        const maxRight = Math.max(0, window.innerWidth - rect.width);
+        const maxTop = Math.max(0, window.innerHeight - rect.height);
+
+        let currentRight = parseInt(div.style.right, 10) || 0;
+        let currentTop = parseInt(div.style.top, 10) || 0;
+        let needsFix = false;
+
+        if (currentRight < 0) { currentRight = 0; needsFix = true; }
+        else if (currentRight > maxRight) { currentRight = maxRight; needsFix = true; }
+
+        if (currentTop < 0) { currentTop = 0; needsFix = true; }
+        else if (currentTop > maxTop) { currentTop = maxTop; needsFix = true; }
+
+        if (needsFix) {
+            // 提供平滑的回弹拉回效果
+            div.style.transition = 'right 0.3s ease, top 0.3s ease';
+            div.style.right = currentRight + 'px';
+            div.style.top = currentTop + 'px';
+            
+            const settings = getSettings();
+            settings.right = currentRight;
+            settings.top = currentTop;
+            saveSettings(settings);
+
+            // 动画完成后清除专门添加的 transition
+            setTimeout(() => {
+                if (div.style.cursor !== 'grabbing') {
+                    div.style.transition = '';
+                }
+            }, 300);
+        }
+    }
+
     function createUI() {
         if (document.getElementById('sync-monitor-indicator')) return true;
         injectStyles();
@@ -86,36 +125,19 @@
             const dx = startX - clientX;
             const dy = clientY - startY;
             
-            // 计算新的位置
             let newRight = initialRight + dx;
             let newTop = initialTop + dy;
 
-            // 获取元素尺寸
             const rect = div.getBoundingClientRect();
-            const elementWidth = rect.width;
-            const elementHeight = rect.height;
+            const maxRight = Math.max(0, window.innerWidth - rect.width);
+            const maxTop = Math.max(0, window.innerHeight - rect.height);
 
-            // 获取视口尺寸
-            const viewportWidth = window.innerWidth;
-            const viewportHeight = window.innerHeight;
+            // 修复点：取消之前的弹性越界阻尼，变更为"严格边界限制"，不让它有一丝拖出屏幕的机会
+            if (newRight < 0) newRight = 0;
+            if (newRight > maxRight) newRight = maxRight;
 
-            // 边界检测和自动回弹
-            const maxRight = viewportWidth - elementWidth;
-            const maxTop = viewportHeight - elementHeight;
-
-            // 使用弹性系数实现回弹效果
-            const elasticity = 0.3;
-            if (newRight < 0) {
-                newRight = -Math.abs(newRight) * elasticity;
-            } else if (newRight > maxRight) {
-                newRight = maxRight + (newRight - maxRight) * elasticity;
-            }
-
-            if (newTop < 0) {
-                newTop = -Math.abs(newTop) * elasticity;
-            } else if (newTop > maxTop) {
-                newTop = maxTop + (newTop - maxTop) * elasticity;
-            }
+            if (newTop < 0) newTop = 0;
+            if (newTop > maxTop) newTop = maxTop;
 
             div.style.right = newRight + 'px';
             div.style.top = newTop + 'px';
@@ -178,6 +200,11 @@
             if (isActive) handleEnd();
         }, { passive: false });
 
+        // 监听调整窗口事件，如果因缩小窗口导致其处于屏幕外，自动拉回屏幕内
+        window.addEventListener('resize', checkAndFixBounds);
+        // 初始化做一次检查（应对上一次记录的值是由于高分屏遗留下的屏幕外坐标）
+        setTimeout(checkAndFixBounds, 100);
+
         return true;
     }
 
@@ -187,6 +214,9 @@
         const settings = getSettings();
         settings.isMini = div.classList.contains('mini-mode');
         saveSettings(settings);
+        
+        // 模式切换如果导致宽度增加可能会触发越界，等待动画执行完毕后检查回弹
+        setTimeout(checkAndFixBounds, 400); 
     }
 
     function startNetworkHooks() {
@@ -201,7 +231,7 @@
                 div.classList.remove('sync-safe');
                 div.classList.add('sync-busy');
                 if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
-                if (text) text.innerText = `正在同步 (${count})`;
+                if (text) text.innerText = `正在同步 ($)`;
             } else {
                 if (timer) clearTimeout(timer);
                 timer = setTimeout(() => {
