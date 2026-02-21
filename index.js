@@ -36,7 +36,7 @@
         if (window.saveSettingsDebounced) window.saveSettingsDebounced();
     }
 
-    // 新增：全局边界检查修复函数（用于处理窗口缩放、加载异常、模式切换导致的越界）
+    // 全局边界检查修复函数（用于处理窗口缩放、加载异常、模式切换导致的越界）
     function checkAndFixBounds() {
         const div = document.getElementById('sync-monitor-indicator');
         if (!div) return;
@@ -132,7 +132,7 @@
             const maxRight = Math.max(0, window.innerWidth - rect.width);
             const maxTop = Math.max(0, window.innerHeight - rect.height);
 
-            // 修复点：取消之前的弹性越界阻尼，变更为"严格边界限制"，不让它有一丝拖出屏幕的机会
+            // 严格边界限制：不允许拖出屏幕
             if (newRight < 0) newRight = 0;
             if (newRight > maxRight) newRight = maxRight;
 
@@ -202,7 +202,7 @@
 
         // 监听调整窗口事件，如果因缩小窗口导致其处于屏幕外，自动拉回屏幕内
         window.addEventListener('resize', checkAndFixBounds);
-        // 初始化做一次检查（应对上一次记录的值是由于高分屏遗留下的屏幕外坐标）
+        // 初始化做一次检查，防止从本地存储读取的坐标处于屏幕外
         setTimeout(checkAndFixBounds, 100);
 
         return true;
@@ -231,7 +231,8 @@
                 div.classList.remove('sync-safe');
                 div.classList.add('sync-busy');
                 if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
-                if (text) text.innerText = `正在同步 ($)`;
+                // 这里修复了模板字符串未正确解析 count 变量的问题
+                if (text) text.innerText = `正在同步 (${})`;
             } else {
                 if (timer) clearTimeout(timer);
                 timer = setTimeout(() => {
