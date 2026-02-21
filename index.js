@@ -85,8 +85,40 @@
             }
             const dx = startX - clientX;
             const dy = clientY - startY;
-            div.style.right = (initialRight + dx) + 'px';
-            div.style.top = (initialTop + dy) + 'px';
+            
+            // 计算新的位置
+            let newRight = initialRight + dx;
+            let newTop = initialTop + dy;
+
+            // 获取元素尺寸
+            const rect = div.getBoundingClientRect();
+            const elementWidth = rect.width;
+            const elementHeight = rect.height;
+
+            // 获取视口尺寸
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            // 边界检测和自动回弹
+            const maxRight = viewportWidth - elementWidth;
+            const maxTop = viewportHeight - elementHeight;
+
+            // 使用弹性系数实现回弹效果
+            const elasticity = 0.3;
+            if (newRight < 0) {
+                newRight = -Math.abs(newRight) * elasticity;
+            } else if (newRight > maxRight) {
+                newRight = maxRight + (newRight - maxRight) * elasticity;
+            }
+
+            if (newTop < 0) {
+                newTop = -Math.abs(newTop) * elasticity;
+            } else if (newTop > maxTop) {
+                newTop = maxTop + (newTop - maxTop) * elasticity;
+            }
+
+            div.style.right = newRight + 'px';
+            div.style.top = newTop + 'px';
         }
 
         function handleEnd() {
